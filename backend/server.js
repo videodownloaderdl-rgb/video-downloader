@@ -350,9 +350,11 @@ app.get(
         let ytDlp = false;
         let ffmpeg = false;
 
-
         let ytDlpPath = null;
         let ffmpegPath = null;
+
+        let ytDlpVersion = null;
+        let ffmpegVersion = null;
 
 
         /* =============================================
@@ -367,12 +369,18 @@ app.get(
                 );
 
 
-            await execFileAsync(
-                ytDlpPath,
-                [
-                    "--version"
-                ]
-            );
+            const ytDlpResult =
+                await execFileAsync(
+                    ytDlpPath,
+                    [
+                        "--version"
+                    ]
+                );
+
+
+            ytDlpVersion =
+                ytDlpResult.stdout
+                    ?.trim() || null;
 
 
             ytDlp = true;
@@ -399,12 +407,23 @@ app.get(
                 );
 
 
-            await execFileAsync(
-                ffmpegPath,
-                [
-                    "-version"
-                ]
-            );
+            const ffmpegResult =
+                await execFileAsync(
+                    ffmpegPath,
+                    [
+                        "-version"
+                    ]
+                );
+
+
+            const firstLine =
+                ffmpegResult.stdout
+                    ?.split("\n")[0]
+                    ?.trim();
+
+
+            ffmpegVersion =
+                firstLine || null;
 
 
             ffmpeg = true;
@@ -419,18 +438,17 @@ app.get(
         }
 
 
-        /*
-            No enviamos las rutas internas
-            de los ejecutables al navegador.
-        */
-
         return res.json({
 
             success: true,
 
             ytDlp,
 
+            ytDlpVersion,
+
             ffmpeg,
+
+            ffmpegVersion,
 
             environment:
                 NODE_ENV
