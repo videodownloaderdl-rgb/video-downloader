@@ -277,31 +277,6 @@ function prepareYouTubeCookies(
     return target;
 }
 
-function prepareYouTubeCookies(
-    jobDirectory = DOWNLOAD_DIR
-) {
-
-    const source =
-        getYouTubeCookiesPath();
-
-    if (!source) {
-        return null;
-    }
-
-    const target =
-        path.join(
-            jobDirectory,
-            "youtube-cookies.txt"
-        );
-
-    fs.copyFileSync(
-        source,
-        target
-    );
-
-    return target;
-}
-
 function prepareInfoCookies() {
 
     const source =
