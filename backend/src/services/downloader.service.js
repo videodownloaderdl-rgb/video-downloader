@@ -252,6 +252,91 @@ function getYouTubeCookiesPath() {
     return null;
 }
 
+function prepareYouTubeCookies(
+    jobDirectory = DOWNLOAD_DIR
+) {
+
+    const source =
+        getYouTubeCookiesPath();
+
+    if (!source) {
+        return null;
+    }
+
+    const target =
+        path.join(
+            jobDirectory,
+            "youtube-cookies.txt"
+        );
+
+    fs.copyFileSync(
+        source,
+        target
+    );
+
+    return target;
+}
+
+function prepareYouTubeCookies(
+    jobDirectory = DOWNLOAD_DIR
+) {
+
+    const source =
+        getYouTubeCookiesPath();
+
+    if (!source) {
+        return null;
+    }
+
+    const target =
+        path.join(
+            jobDirectory,
+            "youtube-cookies.txt"
+        );
+
+    fs.copyFileSync(
+        source,
+        target
+    );
+
+    return target;
+}
+
+function prepareInfoCookies() {
+
+    const source =
+        getYouTubeCookiesPath();
+
+    if (!source) {
+        return null;
+    }
+
+    const directory =
+        path.join(
+            DOWNLOAD_DIR,
+            "_cookies"
+        );
+
+    fs.mkdirSync(
+        directory,
+        {
+            recursive: true
+        }
+    );
+
+    const target =
+        path.join(
+            directory,
+            "youtube-cookies.txt"
+        );
+
+    fs.copyFileSync(
+        source,
+        target
+    );
+
+    return target;
+}
 
 function isYouTubeUrl(
     url
@@ -289,7 +374,8 @@ function isYouTubeUrl(
 
 
 function getYouTubeCookiesArgs(
-    url
+    url,
+    writableDirectory
 ) {
 
     if (
@@ -300,18 +386,27 @@ function getYouTubeCookiesArgs(
         return [];
     }
 
-    const cookiesPath =
+    const source =
         getYouTubeCookiesPath();
 
-    if (
-        !cookiesPath
-    ) {
+    if (!source) {
         return [];
     }
 
+    const target =
+        path.join(
+            writableDirectory,
+            "youtube-cookies.txt"
+        );
+
+    fs.copyFileSync(
+        source,
+        target
+    );
+
     return [
         "--cookies",
-        cookiesPath
+        target
     ];
 }
 
@@ -687,6 +782,19 @@ function parseDuration(
 
 }
 
+const infoCookiesDirectory =
+    path.join(
+        DOWNLOAD_DIR,
+        "_info"
+    );
+
+fs.mkdirSync(
+    infoCookiesDirectory,
+    {
+        recursive: true
+    }
+);
+
 
 export async function getVideoInfo(
     rawUrl
@@ -721,7 +829,10 @@ export async function getVideoInfo(
         "--js-runtimes",
         `deno:${deno}`,
 
-        ...getYouTubeCookiesArgs(url),
+        ...getYouTubeCookiesArgs(
+            url,
+            infoCookiesDirectory
+        ),
 
         url
     ];
@@ -1379,7 +1490,10 @@ export function startJob(
         "--js-runtimes",
         `deno:${deno}`,
 
-        ...getYouTubeCookiesArgs(job.url)
+        ...getYouTubeCookiesArgs(
+            job.url,
+            job.directory
+        ),
     ];
 
 
