@@ -136,6 +136,17 @@ function getExecutable(
     name
 ) {
 
+    /*
+        Primero intentamos utilizar el
+        ejecutable local del proyecto.
+
+        Windows:
+            backend/bin/yt-dlp.exe
+
+        Linux:
+            backend/bin/yt-dlp
+    */
+
     if (
         fs.existsSync(
             executablePath
@@ -143,6 +154,31 @@ function getExecutable(
     ) {
 
         return executablePath;
+
+    }
+
+
+    /*
+        En Render/Linux los ejecutables
+        están instalados en PATH.
+
+        Por ejemplo:
+
+            yt-dlp
+            ffmpeg
+
+        Windows no utiliza este fallback
+        porque allí tenemos los ejecutables
+        locales dentro de backend/bin.
+    */
+
+    if (
+        process.platform !== "win32"
+    ) {
+
+        return name === "FFmpeg"
+            ? "ffmpeg"
+            : "yt-dlp";
 
     }
 
@@ -1165,6 +1201,7 @@ export function startJob(
 
 
     let ytdlp;
+    let ffmpeg;
 
 
     try {
@@ -1176,10 +1213,11 @@ export function startJob(
             );
 
 
-        getExecutable(
-            FFMPEG_PATH,
-            "FFmpeg"
-        );
+        ffmpeg =
+            getExecutable(
+                FFMPEG_PATH,
+                "FFmpeg"
+            );
 
     } catch (
     error
@@ -1273,7 +1311,7 @@ export function startJob(
             `${job.audioQuality}K`,
 
             "--ffmpeg-location",
-            FFMPEG_PATH,
+            ffmpeg,
 
             "--print",
             "after_move:filepath",
@@ -1308,7 +1346,7 @@ export function startJob(
             "mp4",
 
             "--ffmpeg-location",
-            FFMPEG_PATH,
+            ffmpeg,
 
             "--print",
             "after_move:filepath",
@@ -1357,7 +1395,7 @@ export function startJob(
         {
 
             message:
-                `FFmpeg: ${FFMPEG_PATH}`
+                `FFmpeg: ${ffmpeg}`
 
         }
     );
