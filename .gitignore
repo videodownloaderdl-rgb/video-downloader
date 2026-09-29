@@ -34,3 +34,12 @@ Thumbs.db
 
 # Binarios locales
 backend/bin/
+
+youtube-cookies.txt
+
+backend/youtube-cookies.txt
+
+backend/downloads/
+backend/.env
+
+*.mp4

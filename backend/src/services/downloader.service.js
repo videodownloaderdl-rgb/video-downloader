@@ -61,6 +61,12 @@ const DENO_PATH =
         )
         : "deno";
 
+const YOUTUBE_COOKIES_PATH =
+    path.join(
+        BACKEND_DIR,
+        "youtube-cookies.txt"
+    );
+
 
 const jobs =
     new Map();
@@ -216,6 +222,98 @@ function getDeno() {
 
 }
 
+function getYouTubeCookiesPath() {
+
+    const renderPath =
+        "/etc/secrets/youtube-cookies.txt";
+
+    if (
+        fs.existsSync(
+            renderPath
+        )
+    ) {
+        return renderPath;
+    }
+
+    const localPath =
+        path.join(
+            BACKEND_DIR,
+            "youtube-cookies.txt"
+        );
+
+    if (
+        fs.existsSync(
+            localPath
+        )
+    ) {
+        return localPath;
+    }
+
+    return null;
+}
+
+
+function isYouTubeUrl(
+    url
+) {
+
+    try {
+
+        const parsed =
+            new URL(
+                url
+            );
+
+        const hostname =
+            parsed.hostname
+                .toLowerCase()
+                .replace(
+                    /^www\./,
+                    ""
+                );
+
+        return (
+            hostname === "youtube.com" ||
+            hostname === "youtu.be" ||
+            hostname.endsWith(
+                ".youtube.com"
+            )
+        );
+
+    } catch {
+
+        return false;
+
+    }
+}
+
+
+function getYouTubeCookiesArgs(
+    url
+) {
+
+    if (
+        !isYouTubeUrl(
+            url
+        )
+    ) {
+        return [];
+    }
+
+    const cookiesPath =
+        getYouTubeCookiesPath();
+
+    if (
+        !cookiesPath
+    ) {
+        return [];
+    }
+
+    return [
+        "--cookies",
+        cookiesPath
+    ];
+}
 
 /* =========================================================
    PROGRESO DE YT-DLP
@@ -612,30 +710,34 @@ export async function getVideoInfo(
 
 
     const args = [
-
         "--newline",
-
         "--progress",
-
         "--progress-template",
-
         "download:%(progress._percent_str)s|%(progress._total_bytes_str)s|%(progress._speed_str)s|%(progress._eta_str)s",
-
         "--dump-single-json",
-
         "--no-playlist",
-
         "--no-warnings",
-
         "--no-check-certificates",
-
         "--js-runtimes",
-
         `deno:${deno}`,
 
-        url
+        ...getYouTubeCookiesArgs(url),
 
+        url
     ];
+
+    const cookiesPath =
+        getYouTubeCookiesPath();
+
+    console.log(
+        "[YouTube] Cookies:",
+        cookiesPath || "NO DISPONIBLES"
+    );
+
+    console.log(
+        "[YouTube] Args:",
+        args
+    );
 
 
     return new Promise(
@@ -1266,27 +1368,18 @@ export function startJob(
     ===================================================== */
 
     const commonArgs = [
-
         "--newline",
-
         "--progress",
-
         "--progress-template",
-
         "download:%(progress._percent_str)s|%(progress._total_bytes_str)s|%(progress._speed_str)s|%(progress._eta_str)s",
-
         "--no-playlist",
-
         "--restrict-filenames",
-
         "--no-warnings",
-
         "--no-check-certificates",
-
         "--js-runtimes",
+        `deno:${deno}`,
 
-        `deno:${deno}`
-
+        ...getYouTubeCookiesArgs(job.url)
     ];
 
 
