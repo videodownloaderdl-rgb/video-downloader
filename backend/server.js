@@ -201,73 +201,72 @@ app.use(
         ) => {
 
             /*
-                Permitir herramientas locales,
-                Postman y peticiones sin Origin
-                durante desarrollo.
+                Permitir peticiones sin Origin.
+
+                Esto incluye:
+                - Render health checks
+                - curl
+                - Postman
+                - peticiones directas al backend
             */
 
-            if (
-                !isProduction &&
-                !origin
-            ) {
-
+            if (!origin) {
                 return callback(
                     null,
                     true
                 );
-
             }
 
+
+            /*
+                En desarrollo permitimos
+                cualquier origen.
+            */
 
             if (
                 !isProduction &&
                 allowedOrigins.length === 0
             ) {
-
                 return callback(
                     null,
                     true
                 );
-
             }
 
 
             /*
                 En producción solamente
-                permitimos los dominios configurados.
+                permitimos los dominios
+                configurados.
             */
 
             if (
                 allowedOrigins.includes(origin)
             ) {
-
                 return callback(
                     null,
                     true
                 );
-
             }
 
 
             /*
-                También permitimos localhost
-                para poder probar el backend.
+                Permitir localhost durante
+                las pruebas del frontend.
             */
 
             if (
-                origin?.startsWith(
+                origin.startsWith(
                     "http://localhost:"
                 ) ||
-                origin?.startsWith(
+                origin.startsWith(
                     "http://127.0.0.1:"
                 )
             ) {
-
                 return callback(
                     null,
                     true
                 );
-
             }
 
 
@@ -276,7 +275,6 @@ app.use(
                     "Origen no permitido por CORS."
                 )
             );
-
         },
 
         methods: [
@@ -289,7 +287,6 @@ app.use(
             "Content-Type",
             "Accept"
         ]
-
     })
 );
 
