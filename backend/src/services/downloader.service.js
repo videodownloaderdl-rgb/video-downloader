@@ -222,36 +222,6 @@ function getDeno() {
 
 }
 
-function getYouTubeCookiesPath() {
-
-    const renderPath =
-        "/etc/secrets/youtube-cookies.txt";
-
-    if (
-        fs.existsSync(
-            renderPath
-        )
-    ) {
-        return renderPath;
-    }
-
-    const localPath =
-        path.join(
-            BACKEND_DIR,
-            "youtube-cookies.txt"
-        );
-
-    if (
-        fs.existsSync(
-            localPath
-        )
-    ) {
-        return localPath;
-    }
-
-    return null;
-}
-
 function prepareYouTubeCookies(
     jobDirectory = DOWNLOAD_DIR
 ) {
@@ -311,6 +281,39 @@ function prepareInfoCookies() {
     );
 
     return target;
+}
+
+function getYouTubeCookiesPath() {
+
+    const renderPath =
+        "/etc/secrets/youtube-cookies.txt";
+
+    if (
+        fs.existsSync(
+            renderPath
+        )
+    ) {
+        return renderPath;
+    }
+
+
+    const localPath =
+        path.join(
+            BACKEND_DIR,
+            "youtube-cookies.txt"
+        );
+
+
+    if (
+        fs.existsSync(
+            localPath
+        )
+    ) {
+        return localPath;
+    }
+
+
+    return null;
 }
 
 function isYouTubeUrl(
