@@ -458,6 +458,206 @@ app.get(
     }
 );
 
+/* =============================================
+   YOUTUBE TEST - TEMPORAL
+============================================= */
+
+app.get(
+    "/api/youtube-test",
+    async (req, res) => {
+
+        const testUrl =
+            "https://www.youtube.com/watch?v=RnRADCXiuMo";
+
+        let cookiesPath = null;
+
+        try {
+
+            /*
+             * Buscamos las cookies configuradas
+             * para YouTube.
+             */
+            cookiesPath =
+                getYouTubeCookiesPath();
+
+
+            if (!cookiesPath) {
+
+                return res.status(500).json({
+
+                    success: false,
+
+                    error:
+                        "No se encontró el archivo de cookies de YouTube."
+
+                });
+
+            }
+
+
+            /*
+             * Carpeta temporal escribible.
+             */
+            const testDirectory =
+                path.join(
+                    process.cwd(),
+                    "downloads",
+                    "_youtube-test"
+                );
+
+
+            fs.mkdirSync(
+                testDirectory,
+                {
+                    recursive: true
+                }
+            );
+
+
+            /*
+             * Copiamos las cookies del Secret File
+             * a una ubicación escribible.
+             */
+            const writableCookies =
+                path.join(
+                    testDirectory,
+                    "youtube-cookies.txt"
+                );
+
+
+            fs.copyFileSync(
+                cookiesPath,
+                writableCookies
+            );
+
+
+            /*
+             * Ejecutable de yt-dlp.
+             */
+            const ytDlpPath =
+                getExecutable(
+                    "yt-dlp"
+                );
+
+
+            /*
+             * Ejecutamos solamente extracción.
+             *
+             * NO descargamos el vídeo.
+             */
+            const result =
+                await execFileAsync(
+                    ytDlpPath,
+                    [
+                        "--simulate",
+
+                        "--no-playlist",
+
+                        "--no-warnings",
+
+                        "--no-check-certificates",
+
+                        "--cookies",
+                        writableCookies,
+
+                        testUrl
+                    ],
+                    {
+                        maxBuffer:
+                            10 * 1024 * 1024
+                    }
+                );
+
+
+            /*
+             * Eliminamos las cookies copiadas.
+             */
+            try {
+
+                fs.rmSync(
+                    writableCookies,
+                    {
+                        force: true
+                    }
+                );
+
+            } catch { }
+
+
+            return res.json({
+
+                success: true,
+
+                message:
+                    "YouTube respondió correctamente.",
+
+                ytDlpOutput:
+                    result.stdout
+                        ?.trim() || null,
+
+                ytDlpError:
+                    result.stderr
+                        ?.trim() || null
+
+            });
+
+        } catch (error) {
+
+            /*
+             * Intentamos limpiar la copia
+             * de cookies aunque yt-dlp falle.
+             */
+            try {
+
+                const testDirectory =
+                    path.join(
+                        process.cwd(),
+                        "downloads",
+                        "_youtube-test"
+                    );
+
+
+                fs.rmSync(
+                    testDirectory,
+                    {
+                        recursive: true,
+                        force: true
+                    }
+                );
+
+            } catch { }
+
+
+            console.error(
+                "YouTube test error:",
+                error
+            );
+
+
+            return res.status(500).json({
+
+                success: false,
+
+                error:
+                    error.message,
+
+                stdout:
+                    error.stdout
+                        ?.trim() || null,
+
+                stderr:
+                    error.stderr
+                        ?.trim() || null,
+
+                code:
+                    error.code || null
+
+            });
+
+        }
+
+    }
+);
 
 /* =====================================================
    RUTAS DEL DESCARGADOR
