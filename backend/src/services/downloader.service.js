@@ -774,15 +774,10 @@ fs.mkdirSync(
 );
 
 
-export async function getVideoInfo(
-    rawUrl
-) {
+export async function getVideoInfo(rawUrl) {
 
     const url =
-        validatePublicUrl(
-            rawUrl
-        );
-
+        validatePublicUrl(rawUrl);
 
     const ytdlp =
         getExecutable(
@@ -790,44 +785,68 @@ export async function getVideoInfo(
             "yt-dlp"
         );
 
-
     const deno =
         getDeno();
 
+    const infoCookiesDirectory =
+        path.join(
+            DOWNLOAD_DIR,
+            "_info"
+        );
+
+    fs.mkdirSync(
+        infoCookiesDirectory,
+        {
+            recursive: true
+        }
+    );
+
+    const cookieArgs =
+        getYouTubeCookiesArgs(
+            url,
+            infoCookiesDirectory
+        );
 
     const args = [
-        "--newline",
-        "--progress",
-        "--progress-template",
-        "download:%(progress._percent_str)s|%(progress._total_bytes_str)s|%(progress._speed_str)s|%(progress._eta_str)s",
         "--dump-single-json",
         "--no-playlist",
         "--no-warnings",
         "--no-check-certificates",
+
         "--js-runtimes",
         `deno:${deno}`,
 
-        ...getYouTubeCookiesArgs(
-            url,
-            infoCookiesDirectory
-        ),
+        ...cookieArgs,
 
         url
     ];
 
-    const cookiesPath =
-        getYouTubeCookiesPath();
+    console.log(
+        "[YouTube] URL:",
+        url
+    );
+
+    console.log(
+        "[YouTube] yt-dlp:",
+        ytdlp
+    );
+
+    console.log(
+        "[YouTube] Deno:",
+        deno
+    );
 
     console.log(
         "[YouTube] Cookies:",
-        cookiesPath || "NO DISPONIBLES"
+        cookieArgs.length
+            ? cookieArgs[1]
+            : "NO DISPONIBLES"
     );
 
     console.log(
         "[YouTube] Args:",
         args
     );
-
 
     return new Promise(
         (
@@ -840,102 +859,46 @@ export async function getVideoInfo(
                     ytdlp,
                     args,
                     {
-
-                        cwd:
-                            BACKEND_DIR,
-
-                        env: {
-
-                            ...process.env,
-
-                            PATH:
-                                [
-
-                                    path.dirname(
-                                        ytdlp
-                                    ),
-
-                                    path.dirname(
-                                        FFMPEG_PATH
-                                    ),
-
-                                    path.dirname(
-                                        deno
-                                    ),
-
-                                    process.env.PATH ||
-                                    ""
-
-                                ]
-                                    .filter(
-                                        Boolean
-                                    )
-                                    .join(
-                                        path.delimiter
-                                    )
-
-                        },
-
-                        shell:
-                            false,
-
-                        windowsHide:
-                            true,
-
-                        stdio: [
-
-                            "ignore",
-
-                            "pipe",
-
-                            "pipe"
-
-                        ]
-
+                        windowsHide: true,
+                        cwd: BACKEND_DIR
                     }
                 );
 
-
-            let stdout =
-                "";
-
-            let stderr =
-                "";
-
+            let stdout = "";
+            let stderr = "";
 
             child.stdout.on(
                 "data",
-                chunk => {
+                data => {
 
                     stdout +=
-                        chunk.toString();
+                        data.toString();
 
                 }
             );
-
 
             child.stderr.on(
                 "data",
-                chunk => {
+                data => {
 
                     stderr +=
-                        chunk.toString();
+                        data.toString();
 
                 }
             );
-
 
             child.on(
                 "error",
                 error => {
 
                     reject(
-                        error
+                        new Error(
+                            error.message
+                        )
                     );
 
                 }
             );
-
 
             child.on(
                 "close",
@@ -945,22 +908,25 @@ export async function getVideoInfo(
                         code !== 0
                     ) {
 
-                        const errorText =
-                            stderr.trim();
+                        console.error(
+                            "[YouTube] yt-dlp exit code:",
+                            code
+                        );
 
+                        console.error(
+                            "[YouTube] stderr:",
+                            stderr
+                        );
 
                         reject(
                             new Error(
-                                errorText ||
-                                `yt-dlp terminó con código ${code}.`
+                                stderr.trim() ||
+                                `yt-dlp terminó con código ${code}`
                             )
                         );
 
-
                         return;
-
                     }
-
 
                     try {
 
@@ -969,120 +935,28 @@ export async function getVideoInfo(
                                 stdout
                             );
 
-
-                        const heights =
-                            new Set();
-
-
-                        const formats =
-                            Array.isArray(
-                                info.formats
-                            )
-                                ? info.formats
-                                : [];
-
-
-                        for (
-                            const format
-                            of formats
-                        ) {
-
-                            const height =
-                                Number(
-                                    format.height
-                                );
-
-
-                            const hasVideo =
-                                format.vcodec &&
-                                format.vcodec !==
-                                "none";
-
-
-                            if (
-                                hasVideo &&
-                                height > 0
-                            ) {
-
-                                heights.add(
-                                    height
-                                );
-
-                            }
-
-                        }
-
-
-                        const resolutions =
-                            Array
-                                .from(
-                                    heights
-                                )
-                                .filter(
-                                    height =>
-                                        height >= 144
-                                )
-                                .sort(
-                                    (
-                                        a,
-                                        b
-                                    ) =>
-                                        a - b
-                                );
-
-
-                        resolve({
-
-                            title:
-                                info.title ||
-                                "Video",
-
-                            uploader:
-                                info.uploader ||
-                                info.channel ||
-                                null,
-
-                            duration:
-                                info.duration ||
-                                null,
-
-                            durationFormatted:
-                                parseDuration(
-                                    info.duration
-                                ),
-
-                            thumbnail:
-                                info.thumbnail ||
-                                null,
-
-                            platform:
-                                detectPlatform(
-                                    url
-                                ),
-
-                            webpageUrl:
-                                info.webpage_url ||
-                                url,
-
-                            resolutions,
-
-                            hasAudio:
-                                formats.some(
-                                    format =>
-                                        format.acodec &&
-                                        format.acodec !==
-                                        "none"
-                                )
-
-                        });
+                        resolve(
+                            info
+                        );
 
                     } catch (
                     error
                     ) {
 
+                        console.error(
+                            "[YouTube] JSON inválido"
+                        );
+
+                        console.error(
+                            stdout.slice(
+                                0,
+                                1000
+                            )
+                        );
+
                         reject(
                             new Error(
-                                `No se pudo interpretar la información del video: ${error.message}`
+                                "yt-dlp devolvió una respuesta que no es JSON válido."
                             )
                         );
 
@@ -1093,7 +967,6 @@ export async function getVideoInfo(
 
         }
     );
-
 }
 
 

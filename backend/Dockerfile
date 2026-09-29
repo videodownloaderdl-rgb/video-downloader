@@ -11,7 +11,7 @@ RUN apt-get update \
     curl \
     && rm -rf /var/lib/apt/lists/*
 
-RUN python3 -m pip install --break-system-packages --no-cache-dir yt-dlp
+RUN python3 -m pip install --break-system-packages --no-cache-dir --upgrade yt-dlp
 
 COPY package*.json ./
 
